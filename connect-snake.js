@@ -1,17 +1,44 @@
+function generateGrid(topLeft, topRight, bottomLeft, bottomRight, numRows, numColumns) {
+  const [tl_x, tl_y] = topLeft;
+  const [tr_x, tr_y] = topRight;
+  const [bl_x, bl_y] = bottomLeft;
+  const [br_x, br_y] = bottomRight;
 
-// I realize that this list is pretty horrible. I tried to come up
-// with a clean equation to just calculate the xy coordinates for
-// each grid position, but it was taking to long and wasn't as
-// aligned as I wanted. If you can replace this with a function to
-// get the coordinates just as accurately, then by all means, open
-// a pull request. :)
-const gridList = [
-  {x: 0, y: 0, px: 285, py: 333},
+  // top left to top right
+  const x_step = Math.abs(tl_x - tr_x)/(numColumns-1)
+
+  // to accomodate the angled board (top left to top right)
+  const y_drift = Math.abs(tl_y - tr_y) / (numRows-1)
+
+  // top left to bottom left
+  const y_step = Math.abs(tl_y - bl_y) / (numRows-1)
+
+  // TODO: Account for changing y drift as you go down the grid
+
+  let grid = []
+
+  let px = tl_x
+  for (let x = 0; x < numColumns; x++) {
+    let py = tl_y - (x * y_drift)
+    for (let y = 0; y < numRows; y++) {
+      grid.push({x, y, px, py})
+      
+      py += y_step
+    }
+
+    px += x_step
+  }
+
+  return grid
+}
+
+const originalGridList = [
+  {x: 0, y: 0, px: 285, py: 333}, // top left
   {x: 0, y: 1, px: 283, py: 377.5},
   {x: 0, y: 2, px: 284, py: 424},
   {x: 0, y: 3, px: 282, py: 467.5},
   {x: 0, y: 4, px: 283, py: 512},
-  {x: 0, y: 5, px: 283, py: 556},
+  {x: 0, y: 5, px: 283, py: 556}, // bottom left
   {x: 1, y: 0, px: 318, py: 330},
   {x: 1, y: 1, px: 317, py: 374.5},
   {x: 1, y: 2, px: 316, py: 419},
@@ -42,13 +69,24 @@ const gridList = [
   {x: 5, y: 3, px: 450, py: 447},
   {x: 5, y: 4, px: 450.5, py: 489},
   {x: 5, y: 5, px: 451, py: 527},
-  {x: 6, y: 0, px: 483, py: 315},
+  {x: 6, y: 0, px: 483, py: 315}, // top right
   {x: 6, y: 1, px: 482, py: 358},
   {x: 6, y: 2, px: 482, py: 399},
   {x: 6, y: 3, px: 480.8, py: 442},
   {x: 6, y: 4, px: 480.8, py: 484},
-  {x: 6, y: 5, px: 480, py: 523}
+  {x: 6, y: 5, px: 480, py: 523} // bottom right
 ]
+
+const gridList = generateGrid(
+  [originalGridList[0].px, originalGridList[0].py], // top left
+  [originalGridList[36].px, originalGridList[36].py], // top right
+  [originalGridList[5].px, originalGridList[5].py], // bottom left
+  [originalGridList[41].px, originalGridList[41].py], // bottom right
+  6, // rows
+  7 // cols
+)
+
+console.log(gridList)
 
 // Creates a default snake
 function createSnake () {
@@ -121,9 +159,18 @@ class ConnectSnakeGame {
     this.board = document.createElement('img')
     this.board.setAttribute('src', 'static/board.png')
     this.board.setAttribute('style', 'display: none')
+
+    this.dot = document.createElement('img')
+    this.dot.setAttribute('src', 'static/dot.png')
+    this.dot.setAttribute('style', 'display: none')
+
     let self = this
     this.board.onload = () => {
       self.context.drawImage(self.board, 0, 0)
+
+      gridList.forEach(coord => {
+        self.context.drawImage(self.dot, coord.px, coord.py)
+      })
     }
 
     this.yellow = document.createElement('img')
